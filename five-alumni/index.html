@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Five alumni, one average</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --paper: #EEF8F6;
+    --sheet: #FFFFFF;
+    --ink: #123A40;
+    --graphite: #4A6A6E;
+    --rule: #CBE3DF;
+    --bar: #BFE6E1;
+    --bar-active: #8CD3CA;
+    --mean: #0B7A7C;
+    --median: #2A62D0;
+    --mode: #2E8540;
+    --accent: #0B7A7C;
+    --accent-ink: #FFFFFF;
+    --purple: #7B5CC4;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0E1F22; --sheet: #152B2F; --ink: #E4F4F1; --graphite: #9DBDBA;
+      --rule: #2A474B; --bar: #2A5D60; --bar-active: #3A7B7E;
+      --mean: #44C9C6; --median: #86AEFF; --mode: #72D58C;
+      --accent: #44C9C6; --accent-ink: #0E1F22; --purple: #B39BEA; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E1F22; --sheet: #152B2F; --ink: #E4F4F1; --graphite: #9DBDBA;
+    --rule: #2A474B; --bar: #2A5D60; --bar-active: #3A7B7E;
+    --mean: #44C9C6; --median: #86AEFF; --mode: #72D58C;
+    --accent: #44C9C6; --accent-ink: #0E1F22; --purple: #B39BEA; color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Arimo", "Liberation Sans", Arial, Helvetica, sans-serif;
+    font-size: 17px; line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 20px 40px; }
+  h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 6px; }
+  .strip { display: flex; height: 6px; width: 132px; border-radius: 3px; overflow: hidden; margin: 0 0 12px; }
+  .strip span:nth-child(1) { flex: 4; background: var(--mean); }
+  .strip span:nth-child(2) { flex: 3; background: var(--median); }
+  .strip span:nth-child(3) { flex: 3; background: var(--mode); }
+  .strip span:nth-child(4) { flex: 1; background: var(--purple); }
+  .lede { color: var(--graphite); margin: 0 0 18px; max-width: 62ch; }
+  .sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 14px 10px; }
+  svg { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
+  .bar { fill: var(--bar); cursor: ns-resize; }
+  .col:hover .bar, .col.active .bar { fill: var(--bar-active); }
+  .col:focus { outline: none; }
+  .col:focus-visible .focusring { stroke: var(--ink); stroke-width: 2.5; }
+  .focusring { fill: none; stroke: transparent; }
+  .grip { fill: var(--ink); }
+  .axis text, .xlab { fill: var(--graphite); font-size: 13px; }
+  .grid { stroke: var(--rule); stroke-width: 1; }
+  .val { fill: var(--ink); font-size: 15px; font-weight: 700; text-anchor: middle; }
+  .line-mean { stroke: var(--mean); stroke-width: 2.5; }
+  .line-median { stroke: var(--median); stroke-width: 2.5; stroke-dasharray: 8 5; }
+  .line-mode { stroke: var(--mode); stroke-width: 2; stroke-dasharray: 2 4; }
+  .lab { font-size: 13px; font-weight: 700; }
+  .lab.mean { fill: var(--mean); } .lab.median { fill: var(--median); } .lab.mode { fill: var(--mode); }
+
+  .inputs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 6px 0 4px; padding: 0 2% 0 8.5%; }
+  .inputs label { display: flex; flex-direction: column; align-items: center; font-size: 13px; color: var(--graphite); }
+  .inputs input {
+    width: 100%; max-width: 76px; font: inherit; font-size: 16px; text-align: center; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 4px;
+  }
+  .inputs input:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+  .calc { margin: 22px 0 6px; font-size: 1.15rem; overflow-x: auto; white-space: nowrap; padding-bottom: 4px; }
+  .calc .eq { color: var(--graphite); }
+  .calc b.mean { color: var(--mean); }
+  .status { color: var(--graphite); margin: 0 0 18px; min-height: 1.5em; }
+
+  .readouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .readout { border-top: 3px solid; padding-top: 6px; }
+  .readout.mean { border-color: var(--mean); }
+  .readout.median { border-color: var(--median); }
+  .readout.mode { border-color: var(--mode); border-top-style: dotted; }
+  .readout h2 { font-size: 0.95rem; margin: 0; font-weight: 400; color: var(--graphite); }
+  .readout .big { font-size: 1.9rem; font-weight: 700; line-height: 1.2; }
+  .readout .how { font-size: 0.9rem; color: var(--graphite); margin: 2px 0 0; }
+
+  .tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-top: 22px; }
+  button {
+    font: inherit; color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 6px; font-weight: 700;
+    padding: 8px 14px; cursor: pointer;
+  }
+  button:focus-visible { outline: 3px solid var(--median); outline-offset: 2px; }
+  .scale { display: flex; gap: 8px; align-items: center; color: var(--graphite); font-size: 0.95rem; }
+  .scale select { font: inherit; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 4px 6px; }
+  .modes { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; margin: 0 0 16px; }
+  .seg { display: inline-flex; border: 1.5px solid var(--accent); border-radius: 6px; overflow: hidden; }
+  .seg button { background: transparent; color: var(--ink); border-radius: 0; padding: 7px 12px; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .seg button[aria-pressed="false"] { color: var(--accent); font-weight: 700; }
+  .check { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+  .check input { width: 18px; height: 18px; accent-color: var(--ink); }
+  .bet { border: 1px dashed var(--graphite); border-radius: 6px; padding: 12px 14px; margin: 18px 0 6px; }
+  .bet[hidden] { display: none; }
+  .bet p { margin: 0 0 10px; }
+  .bet .row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: end; }
+  .bet label { display: flex; flex-direction: column; font-size: 0.9rem; color: var(--graphite); }
+  .bet input { font: inherit; width: 92px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 5px 6px; }
+  .bet input:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .verdict { margin-top: 10px; min-height: 1.5em; }
+  .verdict .hit, .verdict .miss { color: var(--ink); font-weight: 700; }
+  .tally { color: var(--graphite); font-size: 0.9rem; margin-top: 4px; }
+  .hiddenval { color: var(--graphite); }
+  .note { color: var(--graphite); font-size: 0.9rem; margin-top: 18px; max-width: 62ch; }
+  svg.narrow .axis text, svg.narrow .xlab { font-size: 24px; }
+  svg.narrow .val { font-size: 28px; }
+  svg.narrow .lab { font-size: 24px; }
+  @media (max-width: 520px) {
+    body { font-size: 16px; }
+    main { padding: 18px 14px 32px; }
+    h1 { font-size: 1.35rem; }
+    .sheet { padding: 10px 6px 8px; }
+    .inputs { padding: 0 22% 0 9%; gap: 3px; }
+    .inputs input { padding: 4px 1px; font-size: 15px; }
+    .calc { white-space: normal; font-size: 1.05rem; }
+    .readouts { gap: 8px; }
+    .readout .big { font-size: 1.5rem; }
+    .readout .how { font-size: 0.8rem; }
+  }
+  @media (hover: none) and (pointer: coarse) { .note { display: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Five alumni, one average</h1>
+  <div class="strip" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+  <p class="lede">Each bar is one alum's yearly income, in thousands of dollars. Drag a bar up or down, or type a number under it, and watch the mean, median, and mode move.</p>
+
+  <div class="modes">
+    <div class="seg" role="group" aria-label="How to play">
+      <button type="button" id="mFree" aria-pressed="true">Free play</button>
+      <button type="button" id="mPredict" aria-pressed="false">Predict first</button>
+    </div>
+    <label class="check"><input type="checkbox" id="lock"> <span id="lockLabel">Keep the total fixed at 400</span></label>
+  </div>
+
+  <div class="sheet">
+    <svg id="chart" viewBox="0 0 640 380" role="group" aria-label="Five incomes. Drag a bar, or focus it and use the arrow keys."></svg>
+    <div class="inputs" id="inputs"></div>
+  </div>
+
+  <div class="calc" id="calc" aria-live="polite"></div>
+  <p class="status" id="status"></p>
+
+  <div class="bet" id="bet" hidden>
+    <p><b>Place your bet.</b> Look at the five bars and write what you think the three summaries are. Then reveal. Move any bar and the answers hide again.</p>
+    <div class="row">
+      <label>Mean <input id="gMean" inputmode="decimal" autocomplete="off"></label>
+      <label>Median <input id="gMedian" inputmode="decimal" autocomplete="off"></label>
+      <label>Mode <input id="gMode" autocomplete="off" placeholder="or none"></label>
+      <button type="button" id="reveal">Reveal</button>
+    </div>
+    <div class="verdict" id="verdict" aria-live="polite"></div>
+    <div class="tally" id="tally"></div>
+  </div>
+
+  <div class="readouts">
+    <div class="readout mean"><h2>Mean</h2><div class="big" id="meanOut"></div><p class="how">the total shared out equally</p></div>
+    <div class="readout median"><h2>Median</h2><div class="big" id="medianOut"></div><p class="how" id="medianHow"></p></div>
+    <div class="readout mode"><h2>Mode</h2><div class="big" id="modeOut"></div><p class="how" id="modeHow"></p></div>
+  </div>
+
+  <div class="tools">
+    <button id="reset" type="button">Reset to five 80s</button>
+    <label class="scale">Scale
+      <select id="scale"><option value="200">0 to 200</option><option value="400">0 to 400</option></select>
+    </label>
+  </div>
+  <p class="note">Keyboard: click or tab to a bar, then use the up and down arrows (1 at a time), Page Up and Page Down (10 at a time), Home (0), and End (the top of the scale).</p>
+</main>
+
+<script>
+(function () {
+  const N = 5;
+  let vals = [80, 80, 80, 80, 80];
+  let maxV = 200;
+  let predict = false, revealed = false, lockTotal = false, lockedTotal = 400, rr = 0;
+  let bets = 0, perfect = 0;
+  const svg = document.getElementById("chart");
+  const NS = "http://www.w3.org/2000/svg";
+  let X0 = 54, X1 = 540, Y0 = 20, Y1 = 330, LH = 16, narrow = false; // plot area
+  let colW = (X1 - X0) / N, barW = colW * 0.62;
+  function layout() {
+    narrow = svg.getBoundingClientRect().width < 520;
+    if (narrow) { X0 = 64; X1 = 492; Y0 = 40; Y1 = 600; LH = 28; svg.setAttribute("viewBox", "0 0 640 660"); svg.classList.add("narrow"); }
+    else { X0 = 54; X1 = 540; Y0 = 20; Y1 = 330; LH = 16; svg.setAttribute("viewBox", "0 0 640 380"); svg.classList.remove("narrow"); }
+    colW = (X1 - X0) / N; barW = colW * 0.62;
+  }
+  const y = v => Y1 - (v / maxV) * (Y1 - Y0);
+  const vFromY = py => Math.round(Math.max(0, Math.min(maxV, (Y1 - py) / (Y1 - Y0) * maxV)));
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1);
+
+  function stats(a) {
+    const total = a.reduce((s, v) => s + v, 0);
+    const mean = total / N;
+    const sorted = [...a].sort((p, q) => p - q);
+    const median = sorted[2];
+    const counts = new Map();
+    a.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+    const top = Math.max(...counts.values());
+    const modes = top >= 2 ? [...counts.entries()].filter(([, c]) => c === top).map(([v]) => v).sort((p, q) => p - q) : [];
+    return { total, mean, sorted, median, modes, top };
+  }
+
+  // static layers
+  const gGrid = el("g", { class: "axis" }, svg);
+  const gCols = el("g", {}, svg);
+  const gLines = el("g", {}, svg);
+
+  function drawGrid() {
+    gGrid.innerHTML = "";
+    const step = maxV === 200 ? 40 : 80;
+    for (let v = 0; v <= maxV; v += step) {
+      el("line", { class: "grid", x1: X0, x2: X1, y1: y(v), y2: y(v) }, gGrid);
+      const t = el("text", { x: X0 - 8, y: y(v) + (narrow ? 8 : 4), "text-anchor": "end" }, gGrid); t.textContent = v;
+    }
+  }
+
+  let cols = [];
+  function buildCols() {
+  gCols.innerHTML = ""; cols = [];
+  for (let i = 0; i < N; i++) {
+    const g = el("g", { class: "col", tabindex: "0", role: "slider", "aria-label": "Alum " + (i + 1) + " income, thousands of dollars", "aria-valuemin": "0" }, gCols);
+    const hit = el("rect", { x: X0 + i * colW, y: Y0 - 10, width: colW, height: Y1 - Y0 + 10, fill: "transparent" }, g);
+    const bar = el("rect", { class: "bar", x: X0 + i * colW + (colW - barW) / 2, width: barW, rx: 3 }, g);
+    const ring = el("rect", { class: "focusring", x: X0 + i * colW + (colW - barW) / 2 - 4, width: barW + 8, rx: 5 }, g);
+    const grip = el("rect", { class: "grip", x: X0 + i * colW + colW / 2 - 16, width: 32, height: narrow ? 6 : 4, rx: 2 }, g);
+    const val = el("text", { class: "val", x: X0 + i * colW + colW / 2 }, g);
+    const lab = el("text", { class: "xlab", x: X0 + i * colW + colW / 2, y: Y1 + (narrow ? 38 : 22), "text-anchor": "middle" }, g);
+    lab.textContent = narrow ? "#" + (i + 1) : "Alum " + (i + 1);
+    cols.push({ g, bar, ring, grip, val });
+
+    let dragging = false;
+    const toVal = ev => {
+      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+      return vFromY(pt.matrixTransform(svg.getScreenCTM().inverse()).y);
+    };
+    g.addEventListener("pointerdown", ev => { dragging = true; g.setPointerCapture(ev.pointerId); g.classList.add("active"); set(i, toVal(ev)); ev.preventDefault(); });
+    g.addEventListener("pointermove", ev => { if (dragging) set(i, toVal(ev)); });
+    const end = () => { dragging = false; g.classList.remove("active"); };
+    g.addEventListener("pointerup", end); g.addEventListener("pointercancel", end);
+    g.addEventListener("keydown", ev => {
+      const d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 10, PageDown: -10 }[ev.key];
+      if (d !== undefined) { set(i, vals[i] + d); ev.preventDefault(); }
+      else if (ev.key === "Home") { set(i, 0); ev.preventDefault(); }
+      else if (ev.key === "End") { set(i, maxV); ev.preventDefault(); }
+    });
+  }
+  }
+
+  // number inputs
+  const inputsBox = document.getElementById("inputs");
+  const inputs = vals.map((v, i) => {
+    const lab = document.createElement("label");
+    lab.innerHTML = '<span class="sr-only" style="position:absolute;left:-9999px">Alum ' + (i + 1) + '</span>';
+    const inp = document.createElement("input");
+    inp.type = "number"; inp.min = 0; inp.max = 400; inp.step = 1; inp.inputMode = "numeric";
+    inp.setAttribute("aria-label", "Alum " + (i + 1) + " income");
+    inp.addEventListener("input", () => { const n = parseInt(inp.value, 10); if (!isNaN(n)) set(i, n, true); });
+    inp.addEventListener("blur", () => { inp.value = vals[i]; });
+    lab.appendChild(inp); inputsBox.appendChild(lab); return inp;
+  });
+
+  function set(i, v, fromInput) {
+    v = Math.round(v);
+    if (lockTotal) {
+      v = Math.max(0, Math.min(lockedTotal, v));
+      let need = vals[i] - v; // amount to hand to (need > 0) or take from (need < 0) the other bars
+      const others = [0, 1, 2, 3, 4].filter(k => k !== i);
+      let guard = 0;
+      while (need !== 0 && guard++ < 5000) {
+        const k = others[rr++ % others.length];
+        if (need > 0) { vals[k] += 1; need -= 1; }
+        else if (vals[k] > 0) { vals[k] -= 1; need += 1; }
+        else if (others.every(o => vals[o] === 0)) { v += need; need = 0; } // nothing left to take
+      }
+    } else {
+      v = Math.max(0, Math.min(400, v));
+    }
+    vals[i] = v;
+    const top = Math.max(...vals);
+    if (top > maxV) { maxV = 400; document.getElementById("scale").value = "400"; drawGrid(); }
+    if (predict && revealed) hideAgain();
+    render(fromInput ? i : -1);
+  }
+
+  function hideAgain() {
+    revealed = false;
+    ["gMean", "gMedian", "gMode"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("verdict").textContent = "";
+  }
+
+  function placeLabels(items) {
+    // items: {y, text, cls}; push apart so labels don't collide
+    items.sort((a, b) => a.y - b.y);
+    for (let k = 1; k < items.length; k++) if (items[k].y - items[k - 1].y < LH) items[k].y = items[k - 1].y + LH;
+    return items;
+  }
+
+  function render(skipInput) {
+    const s = stats(vals);
+    cols.forEach((c, i) => {
+      const top = y(vals[i]);
+      c.bar.setAttribute("y", top); c.bar.setAttribute("height", Math.max(0, Y1 - top));
+      c.ring.setAttribute("y", top - 4); c.ring.setAttribute("height", Math.max(0, Y1 - top) + 8);
+      c.grip.setAttribute("y", top + (narrow ? 10 : 6));
+      c.grip.style.display = vals[i] > 6 ? "" : "none";
+      c.val.setAttribute("y", top - (narrow ? 12 : 8)); c.val.textContent = vals[i];
+      c.g.setAttribute("aria-valuenow", vals[i]); c.g.setAttribute("aria-valuemax", maxV);
+      if (i !== skipInput || lockTotal) { if (i !== skipInput) inputs[i].value = vals[i]; }
+    });
+
+    const hide = predict && !revealed;
+    // lines
+    gLines.innerHTML = "";
+    if (hide) { renderHidden(s); return; }
+    const lines = [];
+    s.modes.forEach(m => lines.push({ v: m, cls: "mode", name: "mode" }));
+    lines.push({ v: s.median, cls: "median", name: "median" });
+    lines.push({ v: s.mean, cls: "mean", name: "mean" });
+    lines.forEach(L => el("line", { class: "line-" + L.cls, x1: X0, x2: X1, y1: y(L.v), y2: y(L.v) }, gLines));
+    // group labels that sit on the same value
+    const byVal = new Map();
+    lines.forEach(L => { const k = L.v.toFixed(3); if (!byVal.has(k)) byVal.set(k, []); byVal.get(k).push(L); });
+    const labs = [];
+    byVal.forEach(group => {
+      group.forEach((L, j) => labs.push({ y: y(L.v) + (narrow ? 8 : 4) + j * LH, text: L.name + " " + fmt(L.v), cls: L.cls }));
+    });
+    placeLabels(labs).forEach(l => { const t = el("text", { class: "lab " + l.cls, x: X1 + 8, y: l.y }, gLines); t.textContent = l.text; });
+
+    // calculation
+    const sum = vals.join(" + ");
+    document.getElementById("calc").innerHTML =
+      '<span class="eq">mean = </span>(' + sum + ') ÷ 5 <span class="eq">=</span> ' + s.total + ' ÷ 5 <span class="eq">=</span> <b class="mean">' + fmt(s.mean) + '</b>';
+
+    // status: how far from Ari's 80 and how many sit below the mean
+    const below = vals.filter(v => v < s.mean).length, above = vals.filter(v => v > s.mean).length, at = N - below - above;
+    const totalNote = s.total === 400 ? "The total is 400, so the mean is exactly 80."
+      : "The total is " + s.total + ", " + Math.abs(s.total - 400) + (s.total > 400 ? " more" : " less") + " than 400, so the mean is " + fmt(s.mean) + ", not 80.";
+    const parts = [];
+    if (below) parts.push(below + " below"); if (at) parts.push(at + " at"); if (above) parts.push(above + " above");
+    const lockNote = lockTotal ? " The total is fixed, so whatever you add to one alum comes out of the others." : "";
+    document.getElementById("status").textContent = totalNote + " Alumni relative to the mean: " + parts.join(", ") + "." + lockNote;
+
+    updateLockLabel();
+    document.getElementById("meanOut").textContent = fmt(s.mean);
+    document.getElementById("medianOut").textContent = s.median;
+    document.getElementById("medianHow").textContent = "in order: " + s.sorted.join(", ") + "; the middle one";
+    if (s.modes.length === 0) {
+      document.getElementById("modeOut").textContent = "none";
+      document.getElementById("modeHow").textContent = "every income appears only once";
+    } else {
+      document.getElementById("modeOut").textContent = s.modes.join(" and ");
+      document.getElementById("modeHow").textContent = (s.modes.length > 1 ? "a tie: each appears " : "appears ") + s.top + " times";
+    }
+  }
+
+  function renderHidden(s) {
+    updateLockLabel();
+    document.getElementById("calc").innerHTML =
+      '<span class="eq">mean = </span>(' + vals.join(" + ") + ') ÷ 5 <span class="eq">=</span> <span class="hiddenval">?</span>';
+    document.getElementById("status").textContent = lockTotal
+      ? "The total is fixed at " + lockedTotal + ". What does that tell you about the mean before you reveal?"
+      : "The summaries are hidden until you place your bet.";
+    ["meanOut", "medianOut", "modeOut"].forEach(id => document.getElementById(id).textContent = "?");
+    document.getElementById("medianHow").textContent = "hidden until you reveal";
+    document.getElementById("modeHow").textContent = "hidden until you reveal";
+  }
+
+  function parseModeGuess(t) {
+    t = t.trim().toLowerCase();
+    if (!t) return null;
+    if (/^(none|no|no mode|n\/a|-)$/.test(t)) return [];
+    const nums = t.split(/[^0-9.]+/).filter(Boolean).map(Number);
+    return nums.length ? nums.sort((a, b) => a - b) : null;
+  }
+
+  document.getElementById("reveal").addEventListener("click", () => {
+    const s = stats(vals);
+    const gm = parseFloat(document.getElementById("gMean").value);
+    const gd = parseFloat(document.getElementById("gMedian").value);
+    const go = parseModeGuess(document.getElementById("gMode").value);
+    if (isNaN(gm) || isNaN(gd) || go === null) {
+      document.getElementById("verdict").textContent = "Write a bet in all three boxes first. For the mode, a number, two numbers, or none.";
+      return;
+    }
+    const mHit = Math.abs(gm - s.mean) < 0.05, dHit = gd === s.median;
+    const oHit = go.length === s.modes.length && go.every((v, k) => v === s.modes[k]);
+    const modeTxt = s.modes.length ? s.modes.join(" and ") : "none";
+    const piece = (name, hit, actual, said) => hit
+      ? '<span class="hit">✓ ' + name + ' ' + actual + '.</span>'
+      : '<span class="miss">✗ ' + name + ' ' + actual + '</span> (you said ' + said + ').';
+    document.getElementById("verdict").innerHTML = [
+      piece("Mean", mHit, fmt(s.mean), gm),
+      piece("Median", dHit, s.median, gd),
+      piece("Mode", oHit, modeTxt, go.length ? go.join(" and ") : "none"),
+    ].join(" ");
+    bets++; if (mHit && dHit && oHit) perfect++;
+    document.getElementById("tally").textContent = "Bets placed: " + bets + ". All three right: " + perfect + ".";
+    revealed = true; render(-1);
+  });
+
+  function setMode(p) {
+    predict = p; revealed = false;
+    document.getElementById("mFree").setAttribute("aria-pressed", String(!p));
+    document.getElementById("mPredict").setAttribute("aria-pressed", String(p));
+    document.getElementById("bet").hidden = !p;
+    hideAgain(); render(-1);
+  }
+  document.getElementById("mFree").addEventListener("click", () => setMode(false));
+  document.getElementById("mPredict").addEventListener("click", () => setMode(true));
+
+  const lockBox = document.getElementById("lock");
+  function updateLockLabel() {
+    const t = vals.reduce((a, b) => a + b, 0);
+    document.getElementById("lockLabel").textContent = lockTotal ? "Total fixed at " + lockedTotal : "Keep the total fixed at " + t;
+  }
+  lockBox.addEventListener("change", () => {
+    lockTotal = lockBox.checked;
+    lockedTotal = vals.reduce((a, b) => a + b, 0);
+    updateLockLabel(); render(-1);
+  });
+
+  document.getElementById("reset").addEventListener("click", () => { vals = [80, 80, 80, 80, 80]; lockedTotal = 400; if (predict) hideAgain(); render(-1); });
+  document.getElementById("scale").addEventListener("change", e => {
+    const want = parseInt(e.target.value, 10);
+    if (want < Math.max(...vals)) { e.target.value = "400"; return; }
+    maxV = want; drawGrid(); render(-1);
+  });
+
+  function rebuild() { layout(); drawGrid(); buildCols(); render(-1); }
+  let lastNarrow = null;
+  window.addEventListener("resize", () => { const n = svg.getBoundingClientRect().width < 520; if (n !== lastNarrow) { lastNarrow = n; rebuild(); } });
+  rebuild(); lastNarrow = narrow;
+})();
+</script>
+</body>
+</html>
